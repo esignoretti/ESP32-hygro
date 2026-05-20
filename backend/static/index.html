@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ESP32-Hygro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body class="bg-gray-100 min-h-screen p-4 max-w-lg mx-auto">
+  <h1 class="text-2xl font-bold mb-4">ESP32-Hygro</h1>
+
+  <div id="current-values" class="bg-white rounded-xl shadow p-4 mb-4 text-center">
+    <div class="text-3xl font-mono" id="temp-display">--.-°C</div>
+    <div class="text-xl font-mono text-gray-600" id="hum-display">--%</div>
+    <div class="text-sm mt-2" id="status-display">Waiting for data...</div>
+  </div>
+
+  <div class="bg-white rounded-xl shadow p-4 mb-4">
+    <label class="block text-sm font-medium mb-1">Target Temperature: <span id="target-temp-label">23.0</span>°C</label>
+    <input type="range" id="target-temp" min="10" max="40" step="0.5" class="w-full">
+
+    <label class="block text-sm font-medium mb-1 mt-3">Target Humidity: <span id="target-hum-label">50</span>%</label>
+    <input type="range" id="target-hum" min="20" max="90" step="1" class="w-full">
+
+    <label class="block text-sm font-medium mb-1 mt-3">Alert Range: <span id="alert-percent-label">2.0</span>%</label>
+    <input type="range" id="alert-percent" min="0.5" max="10" step="0.5" class="w-full">
+  </div>
+
+  <div class="bg-white rounded-xl shadow p-4 mb-4">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="text-xs text-gray-500 text-center" id="live-status">Disconnected</div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

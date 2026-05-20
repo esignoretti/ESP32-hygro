@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: esp32-hygro
+    runtime: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: esp32-hygro-db
+          property: connectionString
+      - key: MQTT_BROKER
+        value: broker.hivemq.cloud
+      - key: MQTT_USER
+        sync: false
+      - key: MQTT_PASS
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+
+databases:
+  - name: esp32-hygro-db
+    region: frankfurt
+    plan: free

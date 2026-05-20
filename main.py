@@ -3,6 +3,7 @@ from machine import Pin, I2C
 from ssd1306 import SSD1306_I2C
 from ringbuf import RingBuffer
 from graph import render_graph
+import wifi_mqtt
 
 SAMPLE_INTERVAL_MS = 2000
 LOG_INTERVAL_S = 300
@@ -24,11 +25,15 @@ try:
 except Exception:
     pass
 
+wifi_mqtt.connect_wifi()
+wifi_mqtt.connect_mqtt()
+
 buf = RingBuffer(BUFFER_SIZE)
 buf.append(23.0, 50)
 buf.append(24.0, 55)
 last_log = 0
 last_toggle = 0
+last_mqtt_reconnect = 0
 metric_shown = 0
 
 
@@ -46,6 +51,13 @@ while True:
             hum = sensor.relative_humidity
         except Exception:
             pass
+
+    if temp is not None:
+        wifi_mqtt.publish(temp, hum)
+
+    if not wifi_mqtt.connected and now - last_mqtt_reconnect > 60:
+        wifi_mqtt.reconnect()
+        last_mqtt_reconnect = now
 
     if now - last_toggle >= GRAPH_TOGGLE_S:
         metric_shown = 1 - metric_shown

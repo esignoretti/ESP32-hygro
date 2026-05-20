@@ -68,6 +68,51 @@ Press RST or re-plug USB. The OLED will show:
 
 If no sensor is connected, shows `ERR: sensor` and seeds the graph with dummy data.
 
+### New files (MQTT)
+
+| File | Description |
+|------|-------------|
+| `config.py` | WiFi/MQTT credentials and alert thresholds |
+| `wifi_mqtt.py` | WiFi connection and MQTT publish with auto-reconnect |
+
+## Cloud Expansion
+
+The firmware can publish sensor readings to a cloud backend via MQTT.
+
+### Architecture
+
+```
+ESP32 ──MQTT──▶ HiveMQ Cloud ──MQTT──▶ FastAPI backend
+                                        ├──▶ Web dashboard (Chart.js)
+                                        ├──▶ Telegram notifications
+                                        └──▶ PostgreSQL database
+```
+
+### Backend Setup
+
+1. Register a free [HiveMQ Cloud](https://www.hivemq.com/mqtt-cloud-broker/) account
+2. Create a Telegram bot via [@BotFather](https://t.me/botfather) and save the token
+3. Deploy the `backend/` directory to [Render.com](https://render.com) as a web service:
+   - Connect GitHub repo
+   - Set environment variables: `MQTT_USER`, `MQTT_PASS`, `TELEGRAM_BOT_TOKEN`
+   - Render auto-provisions PostgreSQL
+4. Open the web app URL, send `/start` to your Telegram bot
+
+### ESP32 Config
+
+Edit `config.py` with your WiFi credentials, MQTT broker details, and alert thresholds:
+
+```python
+WIFI_SSID = "your-network"
+WIFI_PASS = "your-password"
+MQTT_USER = "hivemq-username"
+MQTT_PASS = "hivemq-password"
+TARGET_TEMP = 23.0
+ALERT_PERCENT = 2.0
+```
+
+Upload `config.py` and `wifi_mqtt.py` along with the other files.
+
 ## License
 
 MIT
