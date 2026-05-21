@@ -1,9 +1,9 @@
-WIFI_SSID = ""
-WIFI_PASS = ""
+WIFI_SSID = "your-network"
+WIFI_PASS = "your-password"
 MQTT_BROKER = "broker.hivemq.cloud"
 MQTT_PORT = 8883
-MQTT_USER = ""
-MQTT_PASS = ""
+MQTT_USER = "your-mqtt-user"
+MQTT_PASS = "your-mqtt-password"
 MQTT_TOPIC = "esp32-hygro/reading"
 CLIENT_ID = "esp32-hygro-1"
 TARGET_TEMP = 23.0
