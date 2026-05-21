@@ -1,15 +1,9 @@
 import asyncio
 import json
 import os
-import sys
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-import database
-import mqtt_client
-import telegram_bot
-from telegram import Update
-from telegram.ext import Application, CommandHandler
 
 app = FastAPI()
 
@@ -31,27 +25,39 @@ def broadcast(temp, humidity, ts):
 
 @app.on_event("startup")
 async def startup():
-    print("Initializing database...", flush=True)
-    database.init_db()
-    print("Database OK", flush=True)
+    print("Starting ESP32-Hygro backend...", flush=True)
 
-    print("Starting MQTT client...", flush=True)
-    mqtt_client.register_callback(broadcast)
-    mqtt_client.start_mqtt()
-    print("MQTT client OK", flush=True)
+    try:
+        print("Initializing database...", flush=True)
+        import database
+        database.init_db()
+        print("Database OK", flush=True)
+    except Exception as e:
+        print(f"Database init failed: {e}", flush=True)
 
-    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    if token:
-        print("Starting Telegram bot...", flush=True)
-        try:
+    try:
+        print("Starting MQTT client...", flush=True)
+        import mqtt_client
+        mqtt_client.register_callback(broadcast)
+        mqtt_client.start_mqtt()
+        print("MQTT client OK", flush=True)
+    except Exception as e:
+        print(f"MQTT init failed: {e}", flush=True)
+
+    try:
+        token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+        if token:
+            print("Starting Telegram bot...", flush=True)
+            from telegram.ext import Application, CommandHandler
+            import telegram_bot
             tg_app = Application.builder().token(token).build()
             tg_app.add_handler(CommandHandler("start", telegram_bot.handle_start))
             asyncio.create_task(tg_app.start_polling())
             print("Telegram bot OK", flush=True)
-        except Exception as e:
-            print(f"Telegram bot failed: {e}", flush=True)
-    else:
-        print("TELEGRAM_BOT_TOKEN not set, skipping bot", flush=True)
+        else:
+            print("TELEGRAM_BOT_TOKEN not set, skipping bot", flush=True)
+    except Exception as e:
+        print(f"Telegram bot failed: {e}", flush=True)
 
     print("Startup complete", flush=True)
 
