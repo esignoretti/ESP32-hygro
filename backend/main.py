@@ -4,6 +4,8 @@ import os
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+import database
+import mqtt_client
 
 app = FastAPI()
 
@@ -29,7 +31,6 @@ async def startup():
 
     try:
         print("Initializing database...", flush=True)
-        import database
         database.init_db()
         print("Database OK", flush=True)
     except Exception as e:
@@ -37,7 +38,6 @@ async def startup():
 
     try:
         print("Starting MQTT client...", flush=True)
-        import mqtt_client
         mqtt_client.register_callback(broadcast)
         mqtt_client.start_mqtt()
         print("MQTT client OK", flush=True)
