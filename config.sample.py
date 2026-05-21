@@ -1,6 +1,6 @@
 WIFI_SSID = "your-network"
 WIFI_PASS = "your-password"
-MQTT_BROKER = "broker.hivemq.cloud"
+MQTT_BROKER = "580bc15dbdc94a9686c52d5a825dd4c3.s1.eu.hivemq.cloud"
 MQTT_PORT = 8883
 MQTT_USER = "your-mqtt-user"
 MQTT_PASS = "your-mqtt-password"

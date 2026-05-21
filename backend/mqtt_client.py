@@ -4,7 +4,7 @@ import paho.mqtt.client as mqtt
 import database
 import alert
 
-MQTT_BROKER = os.environ.get("MQTT_BROKER", "broker.hivemq.cloud")
+MQTT_BROKER = os.environ.get("MQTT_BROKER", "580bc15dbdc94a9686c52d5a825dd4c3.s1.eu.hivemq.cloud")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "8883"))
 MQTT_USER = os.environ.get("MQTT_USER", "")
 MQTT_PASS = os.environ.get("MQTT_PASS", "")

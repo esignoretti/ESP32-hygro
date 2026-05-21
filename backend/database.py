@@ -56,7 +56,7 @@ def get_readings(hours=24):
     conn = get_conn()
     cur = conn.cursor()
     cur.execute(
-        "SELECT temp, humidity, ts FROM readings WHERE created_at > NOW() - INTERVAL '%s hours' ORDER BY ts ASC",
+        "SELECT temp, humidity, ts FROM readings WHERE created_at > NOW() - INTERVAL '1 hour' * %s ORDER BY ts ASC",
         (hours,),
     )
     rows = cur.fetchall()

@@ -44,6 +44,8 @@ def connect_mqtt():
             port=config.MQTT_PORT,
             user=config.MQTT_USER,
             password=config.MQTT_PASS,
+            ssl=True,
+            ssl_params={"server_hostname": config.MQTT_BROKER},
         )
         client.connect()
         connected = True

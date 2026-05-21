@@ -12,7 +12,7 @@ services:
           name: esp32-hygro-db
           property: connectionString
       - key: MQTT_BROKER
-        value: broker.hivemq.cloud
+        value: 580bc15dbdc94a9686c52d5a825dd4c3.s1.eu.hivemq.cloud
       - key: MQTT_USER
         sync: false
       - key: MQTT_PASS
