@@ -1,6 +1,5 @@
-fastapi==0.115.0
-uvicorn==0.30.0
-paho-mqtt==2.1.0
-psycopg2-binary==2.9.9
-python-telegram-bot==21.0
-sse-starlette==2.0.0
+fastapi>=0.100.0
+uvicorn>=0.20.0
+paho-mqtt>=2.0.0
+psycopg2-binary>=2.9.0
+python-telegram-bot>=20.0,<22.0

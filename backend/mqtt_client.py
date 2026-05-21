@@ -30,7 +30,7 @@ def on_message(client, userdata, msg):
         pass
 
 
-def on_connect(client, userdata, flags, rc, reason=None):
+def on_connect(client, userdata, flags, rc):
     if rc == 0:
         client.subscribe(MQTT_TOPIC)
 
@@ -38,7 +38,7 @@ def on_connect(client, userdata, flags, rc, reason=None):
 def start_mqtt():
     global _client
     try:
-        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        client = mqtt.Client()
         if MQTT_USER:
             client.username_pw_set(MQTT_USER, MQTT_PASS)
         client.tls_set()
