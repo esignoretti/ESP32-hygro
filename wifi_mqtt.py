@@ -73,6 +73,19 @@ def publish(temp, humidity):
         return False
 
 
+def ping():
+    global connected
+    if not client:
+        connected = False
+        return False
+    try:
+        client.ping()
+        return True
+    except Exception:
+        connected = False
+        return False
+
+
 def reconnect():
     connect_wifi()
     connect_mqtt()

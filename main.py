@@ -34,6 +34,7 @@ buf.append(24.0, 55)
 last_log = 0
 last_toggle = 0
 last_mqtt_reconnect = 0
+last_mqtt_ping = 0
 metric_shown = 0
 
 
@@ -55,7 +56,12 @@ while True:
     if temp is not None:
         wifi_mqtt.publish(temp, hum)
 
-    if not wifi_mqtt.connected and now - last_mqtt_reconnect > 60:
+    if wifi_mqtt.connected and now - last_mqtt_ping >= 20:
+        if not wifi_mqtt.ping():
+            wifi_mqtt.connected = False
+        last_mqtt_ping = now
+
+    if not wifi_mqtt.connected and now - last_mqtt_reconnect > 10:
         wifi_mqtt.reconnect()
         last_mqtt_reconnect = now
 

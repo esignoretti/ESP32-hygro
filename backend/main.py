@@ -52,7 +52,8 @@ async def startup():
             import telegram_bot
             tg_app = Application.builder().token(token).build()
             tg_app.add_handler(CommandHandler("start", telegram_bot.handle_start))
-            asyncio.create_task(tg_app.start_polling())
+            import threading
+            threading.Thread(target=tg_app.run_polling, daemon=True).start()
             print("Telegram bot OK", flush=True)
         else:
             print("TELEGRAM_BOT_TOKEN not set, skipping bot", flush=True)
