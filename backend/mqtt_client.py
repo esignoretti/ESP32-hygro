@@ -11,6 +11,7 @@ MQTT_PASS = os.environ.get("MQTT_PASS", "")
 MQTT_TOPIC = os.environ.get("MQTT_TOPIC", "esp32-hygro/reading")
 
 _callbacks = []
+_client = None
 
 
 def on_message(client, userdata, msg):
@@ -29,16 +30,25 @@ def on_message(client, userdata, msg):
         pass
 
 
+def on_connect(client, userdata, flags, rc, reason=None):
+    if rc == 0:
+        client.subscribe(MQTT_TOPIC)
+
+
 def start_mqtt():
-    client = mqtt.Client()
-    if MQTT_USER:
-        client.username_pw_set(MQTT_USER, MQTT_PASS)
-    client.tls_set()
-    client.on_message = on_message
-    client.connect(MQTT_BROKER, MQTT_PORT, 60)
-    client.subscribe(MQTT_TOPIC)
-    client.loop_start()
-    return client
+    global _client
+    try:
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        if MQTT_USER:
+            client.username_pw_set(MQTT_USER, MQTT_PASS)
+        client.tls_set()
+        client.on_message = on_message
+        client.on_connect = on_connect
+        client.connect_async(MQTT_BROKER, MQTT_PORT, 60)
+        client.loop_start()
+        _client = client
+    except Exception:
+        pass
 
 
 def register_callback(cb):

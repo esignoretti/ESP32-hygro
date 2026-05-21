@@ -35,9 +35,12 @@ async def startup():
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
     if token:
-        tg_app = Application.builder().token(token).build()
-        tg_app.add_handler(CommandHandler("start", telegram_bot.handle_start))
-        asyncio.create_task(tg_app.start_polling())
+        try:
+            tg_app = Application.builder().token(token).build()
+            tg_app.add_handler(CommandHandler("start", telegram_bot.handle_start))
+            asyncio.create_task(tg_app.start_polling())
+        except Exception:
+            pass
 
 
 @app.get("/")
