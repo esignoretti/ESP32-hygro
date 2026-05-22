@@ -42,19 +42,31 @@ def init_db():
     cur.close()
 
 
+def _get_cursor():
+    db = _connect() if DB is None else DB
+    if db is None:
+        return None, None
+    try:
+        cur = db.cursor()
+        return db, cur
+    except Exception:
+        DB = None
+        return None, None
+
+
 def insert_reading(temp, humidity, ts):
-    if not DB:
+    db, cur = _get_cursor()
+    if not db or not cur:
         return
-    cur = DB.cursor()
     cur.execute("INSERT INTO readings (temp, humidity, ts) VALUES (%s,%s,%s)", (temp, humidity, ts))
-    DB.commit()
+    db.commit()
     cur.close()
 
 
 def get_readings(hours=24):
-    if not DB:
+    db, cur = _get_cursor()
+    if not db or not cur:
         return []
-    cur = DB.cursor()
     cur.execute("SELECT temp,humidity,ts FROM readings WHERE created_at > NOW() - INTERVAL %s HOURS ORDER BY ts ASC", (hours,))
     rows = cur.fetchall()
     cur.close()
@@ -62,9 +74,9 @@ def get_readings(hours=24):
 
 
 def get_config():
-    if not DB:
+    db, cur = _get_cursor()
+    if not db or not cur:
         return {}
-    cur = DB.cursor()
     cur.execute("SELECT key,value FROM config")
     rows = cur.fetchall()
     cur.close()
@@ -72,9 +84,9 @@ def get_config():
 
 
 def set_config(key, value):
-    if not DB:
+    db, cur = _get_cursor()
+    if not db or not cur:
         return
-    cur = DB.cursor()
     cur.execute("INSERT INTO config (key,value) VALUES (%s,%s) ON CONFLICT (key) DO UPDATE SET value=%s", (key, value, value))
-    DB.commit()
+    db.commit()
     cur.close()
