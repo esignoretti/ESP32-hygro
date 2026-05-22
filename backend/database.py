@@ -1,15 +1,22 @@
 import os
-import re
 import sys
+from urllib.parse import urlparse, unquote
 
 DB = None
 
 
 def _parse_url(url):
-    m = re.match(r"postgres(?:ql)?://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)", url)
-    if not m:
+    try:
+        parsed = urlparse(url)
+        return {
+            "user": unquote(parsed.username),
+            "password": unquote(parsed.password),
+            "host": parsed.hostname,
+            "port": parsed.port or 5432,
+            "database": parsed.path.lstrip("/"),
+        }
+    except Exception:
         return None
-    return {"user": m.group(1), "password": m.group(2), "host": m.group(3), "port": int(m.group(4)), "database": m.group(5)}
 
 
 def _connect():
