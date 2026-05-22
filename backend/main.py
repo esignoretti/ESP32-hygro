@@ -21,6 +21,19 @@ async def telegram_webhook(request: Request):
     telegram_bot.process_update(data)
     return {"ok": True}
 
+
+@app.post("/api/publish")
+async def api_publish(request: Request):
+    body = await request.json()
+    temp = body["temp"]
+    humidity = body["humidity"]
+    ts = body.get("ts", int(__import__("time").time()))
+    import database
+    database.insert_reading(temp, humidity, ts)
+    broadcast(temp, humidity, ts)
+    return {"ok": True, "temp": temp, "humidity": humidity}
+
+
 sse_queues = []
 
 print("ESP32-Hygro backend starting...", flush=True)
