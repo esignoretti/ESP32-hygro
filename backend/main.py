@@ -42,10 +42,10 @@ print("ESP32-Hygro backend starting...", flush=True)
 
 def broadcast(temp, humidity, ts):
     data = json.dumps({"temp": temp, "humidity": humidity, "ts": ts})
-    for q in sse_queues[:]:
+    for q in list(sse_queues):
         try:
             q.put_nowait(data)
-        except Exception:
+        except (asyncio.QueueFull, ValueError):
             sse_queues.remove(q)
 
 

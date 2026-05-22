@@ -28,8 +28,8 @@ def on_message(client, userdata, msg):
 
         for cb in _callbacks:
             cb(temp, humidity, ts)
-    except (json.JSONDecodeError, KeyError) as e:
-        print(f"MQTT invalid message: {e}", flush=True)
+    except (json.JSONDecodeError, KeyError, Exception) as e:
+        print(f"MQTT message error: {e}", flush=True)
 
 
 def on_connect(client, userdata, flags, rc):

@@ -46,51 +46,65 @@ def init_db():
     cur.close()
 
 
-def _get_cursor():
-    db = _connect() if DB is None else DB
-    if db is None:
-        return None, None
+def _ensure_db():
+    global DB
+    if DB is not None:
+        try:
+            cur = DB.cursor()
+            cur.execute("SELECT 1")
+            cur.close()
+            return DB
+        except Exception:
+            DB = None
+    return _connect()
+
+
+def _exec(query, params=None, fetch=False, commit=False):
+    db = _ensure_db()
+    if not db:
+        return [] if fetch else None
     try:
         cur = db.cursor()
-        return db, cur
-    except Exception:
-        DB = None
-        return None, None
+        cur.execute(query, params or ())
+        if fetch:
+            rows = cur.fetchall()
+            cur.close()
+            return rows
+        if commit:
+            db.commit()
+        cur.close()
+    except Exception as e:
+        print(f"DB error: {e}", flush=True)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+    return [] if fetch else None
+
+
+def init_db():
+    _exec("CREATE TABLE IF NOT EXISTS readings (id SERIAL PRIMARY KEY, temp REAL NOT NULL, humidity REAL NOT NULL, ts BIGINT NOT NULL, created_at TIMESTAMP DEFAULT NOW())", commit=True)
+    _exec("CREATE TABLE IF NOT EXISTS config (key VARCHAR(32) PRIMARY KEY, value TEXT NOT NULL)", commit=True)
+    _exec("INSERT INTO config (key, value) VALUES ('target_temp','23.0'),('target_hum','50.0'),('alert_percent','2.0'),('chat_id','') ON CONFLICT (key) DO NOTHING", commit=True)
 
 
 def insert_reading(temp, humidity, ts):
-    db, cur = _get_cursor()
-    if not db or not cur:
-        return
-    cur.execute("INSERT INTO readings (temp, humidity, ts) VALUES (%s,%s,%s)", (temp, humidity, ts))
-    db.commit()
-    cur.close()
+    _exec("INSERT INTO readings (temp, humidity, ts) VALUES (%s,%s,%s)", (temp, humidity, ts), commit=True)
 
 
 def get_readings(hours=24):
-    db, cur = _get_cursor()
-    if not db or not cur:
-        return []
-    cur.execute("SELECT temp,humidity,ts FROM readings WHERE created_at > NOW() - INTERVAL %s HOURS ORDER BY ts ASC", (hours,))
-    rows = cur.fetchall()
-    cur.close()
-    return rows
+    return _exec("SELECT temp,humidity,ts FROM readings WHERE created_at > NOW() - INTERVAL %s HOURS ORDER BY ts ASC", (hours,), fetch=True)
 
 
 def get_config():
-    db, cur = _get_cursor()
-    if not db or not cur:
+    rows = _exec("SELECT key,value FROM config", fetch=True)
+    if not rows:
         return {}
-    cur.execute("SELECT key,value FROM config")
-    rows = cur.fetchall()
-    cur.close()
-    return {r["key"]: r["value"] for r in rows}
+    try:
+        return {r["key"]: r["value"] for r in rows}
+    except TypeError:
+        return {r[0]: r[1] for r in rows}
 
 
 def set_config(key, value):
-    db, cur = _get_cursor()
-    if not db or not cur:
-        return
-    cur.execute("INSERT INTO config (key,value) VALUES (%s,%s) ON CONFLICT (key) DO UPDATE SET value=%s", (key, value, value))
-    db.commit()
-    cur.close()
+    _exec("INSERT INTO config (key,value) VALUES (%s,%s) ON CONFLICT (key) DO UPDATE SET value=%s", (key, value, value), commit=True)
