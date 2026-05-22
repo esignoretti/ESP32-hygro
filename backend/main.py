@@ -24,10 +24,11 @@ async def telegram_webhook(request: Request):
 
 @app.post("/api/publish")
 async def api_publish(request: Request):
+    import time
     body = await request.json()
     temp = body["temp"]
     humidity = body["humidity"]
-    ts = body.get("ts", int(__import__("time").time()))
+    ts = body.get("ts", int(time.time()))
     import database
     database.insert_reading(temp, humidity, ts)
     broadcast(temp, humidity, ts)

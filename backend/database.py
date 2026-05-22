@@ -19,15 +19,19 @@ def _connect():
         print("DATABASE_URL not set, running without database", flush=True)
         return None
 
-    import psycopg2
-    from psycopg2.extras import RealDictCursor
-    params = _parse_url(url)
-    if not params:
-        print(f"Cannot parse DATABASE_URL: {url[:30]}...", flush=True)
+    try:
+        import psycopg2
+        from psycopg2.extras import RealDictCursor
+        params = _parse_url(url)
+        if not params:
+            print(f"Cannot parse DATABASE_URL", flush=True)
+            return None
+        DB = psycopg2.connect(**params, cursor_factory=RealDictCursor)
+        print("Database connected", flush=True)
+        return DB
+    except Exception as e:
+        print(f"Database connection error: {e}", flush=True)
         return None
-    DB = psycopg2.connect(**params, cursor_factory=RealDictCursor)
-    print("Database connected", flush=True)
-    return DB
 
 
 def init_db():
