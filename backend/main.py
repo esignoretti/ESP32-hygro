@@ -7,6 +7,7 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 import database
+import mqtt_client
 
 app = FastAPI()
 
