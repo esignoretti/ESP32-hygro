@@ -1,15 +1,22 @@
 import asyncio
 import json
 import os
+import sys
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-import database
-import mqtt_client
 
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+@app.post("/api/telegram_webhook")
+async def telegram_webhook(request: Request):
+    import telegram_bot
+    data = await request.json()
+    telegram_bot.process_update(data)
+    return {"ok": True}
 
 sse_queues = []
 
@@ -44,22 +51,11 @@ async def startup():
     except Exception as e:
         print(f"MQTT init failed: {e}", flush=True)
 
-    try:
-        token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-        if token:
-            print("Starting Telegram bot...", flush=True)
-            from telegram.ext import Application, CommandHandler
-            import telegram_bot
-            tg_app = Application.builder().token(token).build()
-            tg_app.add_handler(CommandHandler("start", telegram_bot.handle_start))
-            import threading as _t
-            _t.Thread(target=tg_app.run_polling, kwargs={"shutdown_on_close": False, "close_loop": False}, daemon=True).start()
-            await asyncio.sleep( kinaugine01)
-            print("Telegram bot OK", flush=True)
-        else:
-            print("TELEGRAM_BOT_TOKEN not set, skipping bot", flush=True)
-    except Exception as e:
-        print(f"Telegram bot failed: {e}", flush=True)
+    token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    if token:
+        print("Telegram bot token found, alerts enabled", flush=True)
+    else:
+        print("TELEGRAM_BOT_TOKEN not set, alerts disabled", flush=True)
 
     print("Startup complete", flush=True)
 
