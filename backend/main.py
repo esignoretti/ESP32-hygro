@@ -6,6 +6,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+import database
+
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

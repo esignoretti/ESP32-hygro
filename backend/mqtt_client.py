@@ -1,8 +1,6 @@
 import json
 import os
 import paho.mqtt.client as mqtt
-import database
-import alert
 
 MQTT_BROKER = os.environ.get("MQTT_BROKER", "580bc15dbdc94a9686c52d5a825dd4c3.s1.eu.hivemq.cloud")
 MQTT_PORT = int(os.environ.get("MQTT_PORT", "8883"))
@@ -21,7 +19,10 @@ def on_message(client, userdata, msg):
         humidity = data["hum"]
         ts = data["ts"]
 
+        import database
         database.insert_reading(temp, humidity, ts)
+
+        import alert
         alert.check_and_notify(temp, humidity)
 
         for cb in _callbacks:

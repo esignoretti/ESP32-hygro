@@ -1,11 +1,11 @@
 import time
-import database
-import telegram_bot
 
 _last_alert = {}
 
 
 def check_and_notify(temp, humidity):
+    import database
+    import telegram_bot
     config = database.get_config()
     target_temp = float(config.get("target_temp", "23.0"))
     target_hum = float(config.get("target_hum", "50.0"))
