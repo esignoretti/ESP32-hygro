@@ -100,7 +100,7 @@ def insert_reading(temp, humidity, ts):
 
 
 def get_readings(hours=24):
-    return _exec("SELECT temp,humidity,ts FROM readings WHERE created_at > NOW() - INTERVAL %s HOURS ORDER BY ts ASC", (hours,), fetch=True)
+    return _exec("SELECT temp,humidity,ts FROM readings WHERE created_at > NOW() - %s::INTERVAL ORDER BY ts ASC", (f"{hours} hours",), fetch=True)
 
 
 def get_config():
