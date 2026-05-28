@@ -69,6 +69,7 @@ async function loadConfig() {
 }
 
 let lastData = null;
+let lastChartRefresh = 0;
 function connectSSE() {
   const evtSource = new EventSource('/api/live');
   evtSource.onmessage = (e) => {
@@ -84,15 +85,11 @@ function connectSSE() {
       updateCurrent(data.temp, data.humidity, config.target_temp, config.target_hum, config.alert_percent);
     });
 
-    chart.data.labels.push(new Date(data.ts * 1000).toLocaleTimeString());
-    chart.data.datasets[0].data.push(data.temp);
-    chart.data.datasets[1].data.push(data.humidity);
-    if (chart.data.labels.length > 288) {
-      chart.data.labels.shift();
-      chart.data.datasets[0].data.shift();
-      chart.data.datasets[1].data.shift();
+    const now = Date.now();
+    if (now - lastChartRefresh >= 60000) {
+      loadHistorical();
+      lastChartRefresh = now;
     }
-    chart.update('none');
     document.getElementById('live-status').textContent = 'Live';
   };
   evtSource.onerror = () => {

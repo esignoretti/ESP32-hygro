@@ -2,39 +2,75 @@ import time
 import json
 import network
 from umqtt.simple import MQTTClient
-import config
+try:
+    import config
+except ImportError:
+    class _Config:
+        WIFI_SSID = ""
+        WIFI_PASS = ""
+        MQTT_BROKER = ""
+        MQTT_PORT = 8883
+        MQTT_USER = ""
+        MQTT_PASS = ""
+        MQTT_TOPIC = "esp32-hygro/reading"
+        CLIENT_ID = "esp32-hygro"
+        TARGET_TEMP = 23.0
+        TARGET_HUM = 50.0
+        ALERT_PERCENT = 2.0
+    config = _Config()
 
 wlan = None
 client = None
 connected = False
+wifi_started = False
+wifi_retry_after = 0
+
+
+def _best_bssid(ssid):
+    for n in wlan.scan():
+        s = n[0].decode() if isinstance(n[0], bytes) else n[0]
+        if s == ssid:
+            return n[1]
+    return None
 
 
 def connect_wifi():
-    global wlan, connected
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
+    global wlan, wifi_started, wifi_retry_after
 
-    if config.WIFI_SSID:
-        wlan.connect(config.WIFI_SSID, config.WIFI_PASS)
-    else:
-        try:
-            wlan.wps()
-        except Exception:
-            pass
+    if wlan is None:
+        wlan = network.WLAN(network.STA_IF)
+        wlan.active(True)
 
-    timeout = 20
-    while not wlan.isconnected() and timeout > 0:
+    if wlan.isconnected():
+        return True
+
+    if not config.WIFI_SSID:
+        return False
+
+    if not wifi_started:
+        bssid = _best_bssid(config.WIFI_SSID)
+        if bssid:
+            wlan.connect(config.WIFI_SSID, config.WIFI_PASS, bssid=bssid)
+        else:
+            wlan.connect(config.WIFI_SSID, config.WIFI_PASS)
+        wifi_started = True
+        wifi_retry_after = time.time() + 10
+    elif time.time() >= wifi_retry_after and wlan.status() != 1001:
+        wlan.disconnect()
         time.sleep(1)
-        timeout -= 1
+        bssid = _best_bssid(config.WIFI_SSID)
+        if bssid:
+            wlan.connect(config.WIFI_SSID, config.WIFI_PASS, bssid=bssid)
+        else:
+            wlan.connect(config.WIFI_SSID, config.WIFI_PASS)
+        wifi_retry_after = time.time() + 10
 
-    connected = wlan.isconnected()
-    return connected
+    return wlan.isconnected()
 
 
 def connect_mqtt():
     global client, connected
     if not wlan or not wlan.isconnected():
-        connected = False
         return False
 
     try:
@@ -49,10 +85,10 @@ def connect_mqtt():
         )
         client.connect()
         connected = True
+        return True
     except Exception:
         connected = False
-
-    return connected
+        return False
 
 
 def publish(temp, humidity):

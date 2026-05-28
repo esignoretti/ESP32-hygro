@@ -1,20 +1,21 @@
 import time
 from machine import Pin, I2C
 from ssd1306 import SSD1306_I2C
-from ringbuf import RingBuffer
-from graph import render_graph
 import wifi_mqtt
+import config
 
 SAMPLE_INTERVAL_MS = 2000
-LOG_INTERVAL_S = 300
-GRAPH_TOGGLE_S = 10
-BUFFER_SIZE = 288
+SHOW_TEMP_SECS = 5
+SHOW_HUM_SECS = 5
 
-i2c = I2C(0, scl=Pin(22), sda=Pin(21), freq=400000)
+i2c = I2C(0, scl=Pin(6), sda=Pin(5), freq=400000)
 
 display_ok = True
 try:
-    display = SSD1306_I2C(128, 64, i2c)
+    display = SSD1306_I2C(72, 40, i2c)
+    display.fill(0)
+    display.text("ABrobot", 10, 16)
+    display.show()
 except Exception:
     display_ok = False
 
@@ -25,17 +26,11 @@ try:
 except Exception:
     pass
 
-wifi_mqtt.connect_wifi()
-wifi_mqtt.connect_mqtt()
-
-buf = RingBuffer(BUFFER_SIZE)
-buf.append(23.0, 50)
-buf.append(24.0, 55)
-last_log = 0
-last_toggle = 0
-last_mqtt_reconnect = 0
 last_mqtt_ping = 0
-metric_shown = 0
+last_mqtt_retry = 0
+last_swap = 0
+alert_scroll_x = 72
+show_temp = True
 
 
 while True:
@@ -44,6 +39,12 @@ while True:
         continue
 
     now = time.time()
+
+    wifi_mqtt.connect_wifi()
+    if not wifi_mqtt.connected and now - last_mqtt_retry >= 30:
+        wifi_mqtt.connect_mqtt()
+        last_mqtt_retry = now
+
     temp = None
     hum = None
     if sensor:
@@ -61,31 +62,37 @@ while True:
             wifi_mqtt.connected = False
         last_mqtt_ping = now
 
-    if not wifi_mqtt.connected and now - last_mqtt_reconnect > 10:
-        wifi_mqtt.reconnect()
-        last_mqtt_reconnect = now
+    if now - last_swap >= (SHOW_TEMP_SECS if show_temp else SHOW_HUM_SECS):
+        show_temp = not show_temp
+        last_swap = now
 
-    if now - last_toggle >= GRAPH_TOGGLE_S:
-        metric_shown = 1 - metric_shown
-        last_toggle = now
+    temp_range = config.TARGET_TEMP * config.ALERT_PERCENT / 100.0
+    hum_range = config.TARGET_HUM * config.ALERT_PERCENT / 100.0
 
     display.fill(0)
 
-    if temp is not None:
-        display.text(f"Now:{temp:.1f}C {hum:.0f}%", 0, 0)
-        if len(buf) < 3 or now - last_log >= LOG_INTERVAL_S:
-            buf.append(temp, hum)
-            last_log = now
+    if temp is None:
+        display.text("no sensor", 10, 16)
+    elif show_temp:
+        label = f"{temp:.1f}C"
+        x = (72 - len(label) * 8) // 2
+        display.text(label, x, 12)
     else:
-        display.text("ERR: sensor", 0, 0)
+        label = f"{hum:.0f}%"
+        x = (72 - len(label) * 8) // 2
+        display.text(label, x, 12)
 
-    data = buf.as_list()
-    if len(data) >= 2:
-        vmin, vmax = render_graph(display, data, metric_shown, 2, 10, 124, 44)
-        if metric_shown == 0:
-            display.text(f"24h: {vmin:.1f}-{vmax:.1f}C", 0, 56)
-        else:
-            display.text(f"24h: {vmin:.0f}-{vmax:.0f}%", 0, 56)
+    alerts = []
+    if temp is not None and abs(temp - config.TARGET_TEMP) > temp_range:
+        alerts.append("T out of range!")
+    if hum is not None and abs(hum - config.TARGET_HUM) > hum_range:
+        alerts.append("H out of range!")
+    if alerts:
+        msg = "  ".join(alerts) + "  "
+        alert_scroll_x -= 3
+        if alert_scroll_x < -len(msg) * 8:
+            alert_scroll_x = 72
+        display.text(msg, alert_scroll_x, 32)
 
     display.show()
-    time.sleep_ms(SAMPLE_INTERVAL_MS)
+    time.sleep_ms(100)
